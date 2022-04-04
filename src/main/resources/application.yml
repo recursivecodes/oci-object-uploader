@@ -1,0 +1,16 @@
+micronaut:
+  application:
+    name: ociobjectuploader
+oci.config.profile: DEFAULT
+netty:
+  default:
+    allocator:
+      max-order: 3
+codes:
+  recursive:
+    upload-dir: /Users/trsharp/Documents/OCI Uploads
+    oci:
+      namespace: toddrsharp
+      bucket: screenshots
+      region: us-phoenix-1
+
