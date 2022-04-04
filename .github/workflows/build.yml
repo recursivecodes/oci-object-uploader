@@ -97,7 +97,7 @@ jobs:
           java-version: 11
 
       - name: 'Setup GraalVM Environment'
-        uses: DeLaGuardo/setup-graalvm@2.0
+        uses: DeLaGuardo/setup-graalvm@5.0
         with:
           graalvm-version: '22.0.0.2.java11'
 
@@ -187,7 +187,7 @@ jobs:
         env:
           JAVA_HOME: ./graalvm-ce-java11-22.0.0.2
         run: |
-          ./gradlew nativeCompile
+          ./gradlew nativeCompile --stacktrace
 
       - name: 'Get Release URL'
         if: contains(github.ref, 'v')
