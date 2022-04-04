@@ -134,7 +134,7 @@ jobs:
         uses: actions/upload-artifact@v2-preview
         with:
           name: 'oci-object-uploader-${{env.VERSION}}-${{matrix.label}}'
-          path: 'oci-object-uploader-${{env.VERSION}}-all'
+          path: 'oci-object-uploader'
 
       - name: 'Release Native Image Asset'
         if: success() && contains(github.ref, 'v')
@@ -145,7 +145,7 @@ jobs:
         with:
           upload_url: ${{env.UPLOAD_URL}}
           asset_name: 'oci-object-uploader-${{env.VERSION}}-${{matrix.label}}'
-          asset_path: 'oci-object-uploader-${{env.VERSION}}-all'
+          asset_path: 'oci-object-uploader'
           asset_content_type: application/octet-stream
 
   build-windows-image:
@@ -153,39 +153,24 @@ jobs:
     name: 'Build Windows Image'
     runs-on: windows-latest
     steps:
+      - uses: ilammy/msvc-dev-cmd@v1.5.0
+      - uses: microsoft/setup-msbuild@v1
+      - uses: ayltai/setup-graalvm@v1
+        with:
+          java-version: 11
+          graalvm-version: 22.0.0.2
+          native-image: true
+
       - name: 'Checkout'
         uses: actions/checkout@v1
-
-      - name: 'Download GraalVM'
-        run: |
-          Invoke-RestMethod -Uri https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.0.0.2/graalvm-ce-java11-windows-amd64-22.0.0.2.zip -OutFile 'graal.zip'
-
-      - name: 'Install GraalVM'
-        run: |
-          Expand-Archive -path 'graal.zip' -destinationpath '.'
-
-      - name: 'Install Native Image'
-        run: |
-          graalvm-ce-java11-22.0.0.2\bin\gu.cmd install native-image
-
-      - name: 'Set up Visual C Build Tools Workload for Visual Studio 2017 Build Tools'
-        run: |
-          choco install visualstudio2017-workload-vctools
 
       - name: 'Get Version Number'
         run: |
           echo "VERSION=$(./gradlew properties -q | grep "version:" | awk '{print $2}')" >> $GITHUB_ENV
         shell: bash
 
-      - name: 'Get JAR Artifact'
-        uses: actions/download-artifact@v2-preview
-        with:
-          name: 'oci-object-uploader-${{env.VERSION}}-all.jar'
-
       - name: 'Build Native Image'
         shell: cmd
-        env:
-          JAVA_HOME: ./graalvm-ce-java11-22.0.0.2
         run: |
           ./gradlew nativeCompile --stacktrace
 
