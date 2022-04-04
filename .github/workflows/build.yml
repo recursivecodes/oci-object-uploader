@@ -109,11 +109,6 @@ jobs:
         run: |
           echo "VERSION=$(./gradlew properties -q | grep "version:" | awk '{print $2}')" >> $GITHUB_ENV
 
-      - name: 'Get JAR Artifact'
-        uses: actions/download-artifact@v2-preview
-        with:
-          name: 'oci-object-uploader-${{env.VERSION}}-all.jar'
-
       - name: 'Get Release URL'
         if: contains(github.ref, 'v')
         uses: actions/download-artifact@v2-preview
@@ -134,7 +129,7 @@ jobs:
         uses: actions/upload-artifact@v2-preview
         with:
           name: 'oci-object-uploader-${{env.VERSION}}-${{matrix.label}}'
-          path: 'oci-object-uploader'
+          path: 'build/native/nativeCompile/oci-object-uploader'
 
       - name: 'Release Native Image Asset'
         if: success() && contains(github.ref, 'v')
@@ -145,7 +140,7 @@ jobs:
         with:
           upload_url: ${{env.UPLOAD_URL}}
           asset_name: 'oci-object-uploader-${{env.VERSION}}-${{matrix.label}}'
-          asset_path: 'oci-object-uploader'
+          asset_path: 'build/native/nativeCompile/oci-object-uploader'
           asset_content_type: application/octet-stream
 
   build-windows-image:
@@ -191,7 +186,7 @@ jobs:
         uses: actions/upload-artifact@v2-preview
         with:
           name: 'oci-object-uploader-${{env.VERSION}}-windows.exe'
-          path: 'oci-object-uploader-${{env.VERSION}}-all.exe'
+          path: 'build/native/nativeCompile/oci-object-uploader.exe'
 
       - name: 'Release Windows Image Asset'
         if: success() && contains(github.ref, 'v')
@@ -202,5 +197,5 @@ jobs:
         with:
           upload_url: ${{env.UPLOAD_URL}}
           asset_name: 'oci-object-uploader-${{env.VERSION}}-windows.exe'
-          asset_path: 'oci-object-uploader-${{env.VERSION}}-all.exe'
+          asset_path: 'build/native/nativeCompile/oci-object-uploader.exe'
           asset_content_type: application/octet-stream
