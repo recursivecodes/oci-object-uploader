@@ -186,7 +186,7 @@ jobs:
         uses: actions/upload-artifact@v2-preview
         with:
           name: 'oci-object-uploader-${{env.VERSION}}-windows.exe'
-          path: 'build/native/nativeCompile/oci-object-uploader.exe'
+          path: 'build\native\nativeCompile\oci-object-uploader.exe'
 
       - name: 'Release Windows Image Asset'
         if: success() && contains(github.ref, 'v')
@@ -197,5 +197,5 @@ jobs:
         with:
           upload_url: ${{env.UPLOAD_URL}}
           asset_name: 'oci-object-uploader-${{env.VERSION}}-windows.exe'
-          asset_path: 'build/native/nativeCompile/oci-object-uploader.exe'
+          asset_path: 'build\native\nativeCompile\oci-object-uploader.exe'
           asset_content_type: application/octet-stream
