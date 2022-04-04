@@ -6,11 +6,9 @@ netty:
   default:
     allocator:
       max-order: 3
-codes:
-  recursive:
-    upload-dir: /Users/trsharp/Documents/OCI Uploads
-    oci:
-      namespace: toddrsharp
-      bucket: screenshots
-      region: us-phoenix-1
+local-upload-dir: /Users/trsharp/Documents/OCI Uploads
+oci-namespace: toddrsharp
+oci-bucket: screenshots
+oci-region: us-phoenix-1
+oci-par-duration-hours: 24
 
