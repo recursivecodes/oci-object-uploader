@@ -3,7 +3,7 @@ plugins {
     id("io.micronaut.application") version "3.3.0"
 }
 
-version = "0.7"
+version = "0.8"
 group = "codes.recursive"
 
 repositories {
@@ -32,7 +32,7 @@ graalvmNative {
     binaries {
         named("main") {
             buildArgs.add("--initialize-at-build-time=com.google")
-            buildArgs.add("-J-Xmx12g")
+            buildArgs.add("-J-Xmx8g")
         }
     }
 }
