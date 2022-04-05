@@ -79,9 +79,9 @@ public class FileWatcherService {
                 Boolean hasException = false;
                 // checking if file exists and is not hidden because
                 // temp linux .swp files can trigger change events
-                if (!changedFile.isHidden() && changedFile.exists()) {
+                if (!changedFile.isHidden()) {
                     // if this is a modify/create event, upload the object
-                    if (!StandardWatchEventKinds.ENTRY_DELETE.equals(event.kind())){
+                    if ( !StandardWatchEventKinds.ENTRY_DELETE.equals(event.kind()) && changedFile.exists() ){
                         // upload the object
                         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                                 .objectName(event.context().toString())
@@ -142,6 +142,9 @@ public class FileWatcherService {
                     String message = "Action (" + event.kind() + ") was " + (hasException ? "NOT " : "") + "applied to '" + objectName + "' in '" + bucket + "'.";
                     LOG.info(message);
                     if (objectUrl.length() > 0) LOG.info("URL: {}", objectUrl);
+                }
+                else {
+                    LOG.info("Action ({}) was ignored (file is hidden)", event.kind());
                 }
             }
             key.reset();
