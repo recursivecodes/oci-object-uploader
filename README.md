@@ -25,11 +25,12 @@ You'll need a properly configured OCI CLI config file locally, installed in the 
 
 [Download a release](https://github.com/recursivecodes/oci-object-uploader/releases/latest) for your OS, make it executable, and run it. 
 
+### MacOS/Linux
 You'll need to pass in some values (and you do have the [CLI configured](#before-you-get-started) already, right?). 
 
 ```shell
 ./oci-object-uploader \
-  -Duploader.local-upload-dir=/tmp \
+  -Duploader.local-upload-dir=/tmp/test \
   -Duploader.oci.namespace=toddrsharp \
   -Duploader.oci.bucket=screenshots \
   -Duploader.oci.region=us-phoenix-1 \
@@ -38,14 +39,25 @@ You'll need to pass in some values (and you do have the [CLI configured](#before
 
 The application will log all actions to the console. If you'd prefer, you can run this application in the background and log to a file:
 
-### MacOS
 ```shell
-./oci-object-uploader \
-  -Duploader.local-upload-dir=/tmp \
+nohup ./oci-object-uploader \
+  -Duploader.local-upload-dir=/tmp/test \
   -Duploader.oci.namespace=toddrsharp \
   -Duploader.oci.bucket=screenshots \
   -Duploader.oci.region=us-phoenix-1 \
   -Duploader.oci.par-duration-hours=24 > /tmp/oci-object-uploader.log &
+```
+
+Optionally run by setting environment variables (instead of passing arguments):
+
+```shell
+$ export UPLOADER_LOCAL_UPLOAD_DIR = "/tmp/test"
+$ export UPLOADER_OCI_NAMESPACE = "toddrsharp"
+$ export UPLOADER_OCI_BUCKET = "screenshots"
+$ export UPLOADER_OCI_REGION = "us-phoenix-1"
+$ export UPLOADER_OCI_PAR_DURATION_HOURS = 24
+
+$ ./oci-object-uploader
 ```
 
 ### Windows (PowerShell)
@@ -66,22 +78,14 @@ If you want to build your own native image, clone the repo and build with `./gra
 
 ## Running as a Jar
 
-If ya want to, clone the repo and build it with `./gradlew build` and run the Jar.
+If for some reason you'd prefer to run it as a Jar file, clone the repo and build it with `./gradlew build` and run the Jar.
 
 ```shell
 $ java -jar \
-  -Duploader.local-upload-dir=/tmp \
+  -Duploader.local-upload-dir=/tmp/test \
   -Duploader.oci.namespace=toddrsharp \
   -Duploader.oci.bucket=screenshots \
   -Duploader.oci.region=us-phoenix-1 \
   -Duploader.oci.par-duration-hours=24 \
   build/libs/oci-object-uploader-0.1-all.jar
-```
-
-
-
-Run in background on Mac:
-
-```shell
-$ nohup ./ociobjectuploader > /tmp/oci.log &
 ```
