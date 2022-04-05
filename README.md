@@ -13,9 +13,9 @@ Other things of note:
 
 What could cause an exception? Lots of things. For example, if you changed the name of a file in your local directory while this application was not running, and then tried to delete it, the delete would fail because the remote object would not be found via the new name.
 
-Again, *this application only syncs while running*! It *will not sync any changes that happen offline*! It doesn't "catch up" to your offline changes. Ever.
+Again, **this application only syncs while running**! It **will not sync any changes that happen offline**! It doesn't "catch up" to your offline changes. Ever.
 
-It's *not* intended to be a full offline/backup/sync utility. It *is* intended to be a demo/Proof of Concept and an easy way to upload things like screenshots to a cloud bucket in an automated manner.
+It's **not** intended to be a full offline/backup/sync utility. It **is** intended to be a Proof of Concept and demo as well as an easy way to upload things like screenshots to a cloud bucket in an automated manner.
 
 ## Before You Get Started
 
