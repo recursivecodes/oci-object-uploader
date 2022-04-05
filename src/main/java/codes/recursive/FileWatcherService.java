@@ -74,12 +74,8 @@ public class FileWatcherService {
                 String baseUrl = "https://objectstorage." + region + ".oraclecloud.com";
                 String objectUrl = "";
                 Boolean hasException = false;
-                // checking if file exists and is not hidden because
-                // temp linux .swp files can trigger change events
                 if (!changedFile.isHidden()) {
-                    // if this is a modify/create event, upload the object
                     if ( !StandardWatchEventKinds.ENTRY_DELETE.equals(event.kind()) && changedFile.exists() ){
-                        // upload the object
                         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                                 .objectName(event.context().toString())
                                 .namespaceName(namespace)
@@ -95,7 +91,6 @@ public class FileWatcherService {
                             LOG.error("Update Object Exception: {}", e.getMessage());
                         }
                         if(isPrivateBucket) {
-                            // get a pre-authenticated request for the uploaded object
                             CreatePreauthenticatedRequestDetails requestDetails = CreatePreauthenticatedRequestDetails.builder()
                                     .name("PAR_" + UUID.randomUUID().toString())
                                     .bucketListingAction(PreauthenticatedRequest.BucketListingAction.Deny)
