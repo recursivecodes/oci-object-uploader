@@ -77,69 +77,72 @@ public class FileWatcherService {
                 String baseUrl = "https://objectstorage." + region + ".oraclecloud.com";
                 String objectUrl = "";
                 Boolean hasException = false;
-
-                // if this is a modify/create event, upload the object
-                if (!StandardWatchEventKinds.ENTRY_DELETE.equals(event.kind())){
-                    // upload the object
-                    PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                                    .objectName(event.context().toString())
-                                    .namespaceName(namespace)
-                                    .bucketName(bucket)
-                                    .putObjectBody(new FileInputStream(changedFile))
-                                    .contentType(contentType)
-                                    .build();
-                    try {
-                        PutObjectResponse putObjectResponse = objectStorageClient.putObject(putObjectRequest);
-                    }
-                    catch (BmcException e) {
-                        hasException = true;
-                        LOG.error("Update Object Exception: {}", e.getMessage());
-                    }
-
-                    if(isPrivateBucket) {
-                        // get a pre-authenticated request for the uploaded object
-                        CreatePreauthenticatedRequestDetails requestDetails = CreatePreauthenticatedRequestDetails.builder()
-                                .name("PAR_" + UUID.randomUUID().toString())
-                                .bucketListingAction(PreauthenticatedRequest.BucketListingAction.Deny)
-                                .accessType(CreatePreauthenticatedRequestDetails.AccessType.ObjectRead)
-                                .objectName(objectName)
-                                .timeExpires(Date.from(LocalDateTime.now().plusHours(parDurationHours).atZone(ZoneId.systemDefault()).toInstant()))
-                                .build();
-                        CreatePreauthenticatedRequestRequest preAuthenticatedRequest = CreatePreauthenticatedRequestRequest.builder()
-                                .bucketName(bucket)
+                // checking if file exists and is not hidden because
+                // temp linux .swp files can trigger change events
+                if (!changedFile.isHidden() && changedFile.exists()) {
+                    // if this is a modify/create event, upload the object
+                    if (!StandardWatchEventKinds.ENTRY_DELETE.equals(event.kind())){
+                        // upload the object
+                        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                                .objectName(event.context().toString())
                                 .namespaceName(namespace)
-                                .createPreauthenticatedRequestDetails(requestDetails)
+                                .bucketName(bucket)
+                                .putObjectBody(new FileInputStream(changedFile))
+                                .contentType(contentType)
                                 .build();
                         try {
-                            CreatePreauthenticatedRequestResponse preAuthenticatedRequestResponse = objectStorageClient.createPreauthenticatedRequest(preAuthenticatedRequest);
-                            objectUrl = baseUrl + preAuthenticatedRequestResponse.getPreauthenticatedRequest().getAccessUri();
+                            PutObjectResponse putObjectResponse = objectStorageClient.putObject(putObjectRequest);
                         }
                         catch (BmcException e) {
                             hasException = true;
-                            LOG.error("Create PAR Exception: {}", e.getMessage());
+                            LOG.error("Update Object Exception: {}", e.getMessage());
+                        }
+
+                        if(isPrivateBucket) {
+                            // get a pre-authenticated request for the uploaded object
+                            CreatePreauthenticatedRequestDetails requestDetails = CreatePreauthenticatedRequestDetails.builder()
+                                    .name("PAR_" + UUID.randomUUID().toString())
+                                    .bucketListingAction(PreauthenticatedRequest.BucketListingAction.Deny)
+                                    .accessType(CreatePreauthenticatedRequestDetails.AccessType.ObjectRead)
+                                    .objectName(objectName)
+                                    .timeExpires(Date.from(LocalDateTime.now().plusHours(parDurationHours).atZone(ZoneId.systemDefault()).toInstant()))
+                                    .build();
+                            CreatePreauthenticatedRequestRequest preAuthenticatedRequest = CreatePreauthenticatedRequestRequest.builder()
+                                    .bucketName(bucket)
+                                    .namespaceName(namespace)
+                                    .createPreauthenticatedRequestDetails(requestDetails)
+                                    .build();
+                            try {
+                                CreatePreauthenticatedRequestResponse preAuthenticatedRequestResponse = objectStorageClient.createPreauthenticatedRequest(preAuthenticatedRequest);
+                                objectUrl = baseUrl + preAuthenticatedRequestResponse.getPreauthenticatedRequest().getAccessUri();
+                            }
+                            catch (BmcException e) {
+                                hasException = true;
+                                LOG.error("Create PAR Exception: {}", e.getMessage());
+                            }
+                        }
+                        else {
+                            objectUrl = baseUrl +  "/n/" + namespace + "/b/" + bucket + "/o/" + objectName.replaceAll(" ", "%20");
                         }
                     }
                     else {
-                        objectUrl = baseUrl +  "/n/" + namespace + "/b/" + bucket + "/o/" + objectName.replaceAll(" ", "%20");
+                        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                                .bucketName(bucket)
+                                .objectName(objectName)
+                                .namespaceName(namespace)
+                                .build();
+                        try{
+                            DeleteObjectResponse deleteObjectResponse = objectStorageClient.deleteObject(deleteObjectRequest);
+                        }
+                        catch (BmcException e) {
+                            hasException = true;
+                            LOG.error("Delete Exception: {}", e.getMessage());
+                        }
                     }
+                    String message = "Action (" + event.kind() + ") was " + (hasException ? "NOT " : "") + "applied to '" + objectName + "' in '" + bucket + "'.";
+                    LOG.info(message);
+                    if (objectUrl.length() > 0) LOG.info("URL: {}", objectUrl);
                 }
-                else {
-                    DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                            .bucketName(bucket)
-                            .objectName(objectName)
-                            .namespaceName(namespace)
-                            .build();
-                    try{
-                        DeleteObjectResponse deleteObjectResponse = objectStorageClient.deleteObject(deleteObjectRequest);
-                    }
-                    catch (BmcException e) {
-                        hasException = true;
-                        LOG.error("Delete Exception: {}", e.getMessage());
-                    }
-                }
-                String message = "Action (" + event.kind() + ") was " + (hasException ? "NOT " : "") + "applied to '" + objectName + "' in '" + bucket + "'.";
-                LOG.info(message);
-                if (objectUrl.length() > 0) LOG.info("URL: {}", objectUrl);
             }
             key.reset();
         }

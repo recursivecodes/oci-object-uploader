@@ -39,6 +39,11 @@ graalvmNative {
 application {
     mainClass.set("codes.recursive.Application")
 }
+
+shadowJar {
+    mergeServiceFiles()
+}
+
 java {
     sourceCompatibility = JavaVersion.toVersion("11")
     targetCompatibility = JavaVersion.toVersion("11")
