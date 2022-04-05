@@ -167,7 +167,7 @@ jobs:
       - name: 'Build Native Image'
         shell: cmd
         run: |
-          ./gradlew nativeCompile --stacktrace
+          ./gradlew nativeCompile --stacktrace -J-Xmx64g
 
       - name: 'Get Release URL'
         if: contains(github.ref, 'v')
