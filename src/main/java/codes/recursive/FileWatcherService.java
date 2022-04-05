@@ -74,7 +74,7 @@ public class FileWatcherService {
                 String baseUrl = "https://objectstorage." + region + ".oraclecloud.com";
                 String objectUrl = "";
                 Boolean hasException = false;
-                if (!changedFile.isHidden()) {
+                if (!changedFile.isHidden() && changedFile.exists()) {
                     // if this is a modify/create event, upload the object
                     if (!StandardWatchEventKinds.ENTRY_DELETE.equals(event.kind())){
                         // upload the object
