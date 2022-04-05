@@ -10,11 +10,19 @@ import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import com.oracle.bmc.objectstorage.responses.CreatePreauthenticatedRequestResponse;
 import com.oracle.bmc.objectstorage.responses.GetBucketResponse;
 import com.oracle.bmc.objectstorage.responses.PutObjectResponse;
+import com.sshtools.twoslices.Toast;
+import com.sshtools.twoslices.ToastType;
 import io.micronaut.context.annotation.Property;
 import jakarta.inject.Singleton;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.Validator;
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -32,6 +40,7 @@ import java.util.UUID;
 public class FileWatcherService {
     private static final Logger LOG = LoggerFactory.getLogger(FileWatcherService.class);
     public final ObjectStorageClient objectStorageClient;
+    private final Config config;
     private final String uploadDir;
     private final String bucket;
     private final String namespace;
@@ -41,18 +50,15 @@ public class FileWatcherService {
 
     public FileWatcherService(
             ObjectStorageClient objectStorageClient,
-            @Property(name = "local-upload-dir") String uploadDir,
-            @Property(name = "oci-bucket") String bucket,
-            @Property(name = "oci-namespace") String namespace,
-            @Property(name = "oci-region") String region,
-            @Property(name = "oci-par-duration-hours") Integer parDurationHours
-    ) throws IOException, NoSuchAlgorithmException, CertificateException, KeyStoreException, KeyManagementException {
+            Config config
+    ){
         this.objectStorageClient = objectStorageClient;
-        this.uploadDir = uploadDir;
-        this.bucket = bucket;
-        this.namespace = namespace;
-        this.region = region;
-        this.parDurationHours = parDurationHours;
+        this.config = config;
+        this.uploadDir = config.getLocalUploadDir();
+        this.bucket = config.getOci().getBucket();
+        this.namespace = config.getOci().getNamespace();
+        this.region = config.getOci().getRegion();
+        this.parDurationHours = config.getOci().getParDurationHours();
 
         // cache bucket visibility
         GetBucketResponse getBucketResponse = objectStorageClient.getBucket(GetBucketRequest.builder().bucketName(bucket).namespaceName(namespace).build());
@@ -63,6 +69,8 @@ public class FileWatcherService {
         WatchService watchService = FileSystems.getDefault().newWatchService();
         Path path = Paths.get(uploadDir);
         LOG.info("Watching: {}", uploadDir);
+        LOG.info("Objects will be uploaded to the '{}' bucket in '{}' (namespace: '{}')", bucket, region, namespace);
+        if(isPrivateBucket) LOG.info("Since this bucket is private, pre-authenticated requests will be created with a duration of {} hours", parDurationHours);
         path.register(
                 watchService,
                 StandardWatchEventKinds.ENTRY_CREATE,
@@ -122,9 +130,7 @@ public class FileWatcherService {
                             "/Users/trsharp/bin/alerter",
                             "-timeout 5",
                             "-title \"Object Uploaded!\"",
-                            "-sender hubdocuments.oracle.webcenter.app",
-                            "-message \"" + message + "\"",
-                            "-appIcon https://objectstorage.us-phoenix-1.oraclecloud.com/n/toddrsharp/b/object-upload-demo-public/o/cloud.png",
+                            "-message \"" + message + "\""
                     };
                     processBuilder.command("bash", "-c", String.join(" ",args));
                     Process process = processBuilder.start();

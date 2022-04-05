@@ -1,21 +1,8 @@
-## Micronaut 3.4.0 Documentation
-
-- [User Guide](https://docs.micronaut.io/3.4.0/guide/index.html)
-- [API Reference](https://docs.micronaut.io/3.4.0/api/index.html)
-- [Configuration Reference](https://docs.micronaut.io/3.4.0/guide/configurationreference.html)
-- [Micronaut Guides](https://guides.micronaut.io/index.html)
----
-
-- [Shadow Gradle Plugin](https://plugins.gradle.org/plugin/com.github.johnrengelman.shadow)
-## Feature http-client documentation
-
-- [Micronaut HTTP Client documentation](https://docs.micronaut.io/latest/guide/index.html#httpClient)
+## OCI Object Uploader 
 
 
-## Feature oracle-cloud-sdk documentation
+Run in background on Mac:
 
-- [Micronaut Oracle Cloud SDK documentation](https://micronaut-projects.github.io/micronaut-oracle-cloud/latest/guide/)
-
-- [https://docs.cloud.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm](https://docs.cloud.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm)
-
-
+```shell
+$ nohup ./ociobjectuploader > /tmp/oci.log &
+```

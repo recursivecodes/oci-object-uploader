@@ -6,9 +6,11 @@ netty:
   default:
     allocator:
       max-order: 3
-local-upload-dir: /Users/trsharp/Documents/OCI Uploads
-oci-namespace: toddrsharp
-oci-bucket: screenshots
-oci-region: us-phoenix-1
-oci-par-duration-hours: 24
+uploader:
+  local-upload-dir:
+  oci:
+    namespace:
+    bucket:
+    region:
+    par-duration-hours:
 
