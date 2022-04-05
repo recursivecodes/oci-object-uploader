@@ -38,10 +38,7 @@ public class FileWatcherService {
     private final Integer parDurationHours;
     private final Boolean isPrivateBucket;
 
-    public FileWatcherService(
-            ObjectStorageClient objectStorageClient,
-            Config config
-    ){
+    public FileWatcherService( ObjectStorageClient objectStorageClient, Config config){
         this.objectStorageClient = objectStorageClient;
         this.config = config;
         this.uploadDir = config.getLocalUploadDir();
@@ -49,7 +46,6 @@ public class FileWatcherService {
         this.namespace = config.getOci().getNamespace();
         this.region = config.getOci().getRegion();
         this.parDurationHours = config.getOci().getParDurationHours();
-
         // cache bucket visibility
         GetBucketResponse getBucketResponse = objectStorageClient.getBucket(GetBucketRequest.builder().bucketName(bucket).namespaceName(namespace).build());
         this.isPrivateBucket = getBucketResponse.getBucket().getPublicAccessType().equals(Bucket.PublicAccessType.NoPublicAccess);
@@ -58,16 +54,17 @@ public class FileWatcherService {
     public void watch() throws IOException, InterruptedException {
         WatchService watchService = FileSystems.getDefault().newWatchService();
         Path path = Paths.get(uploadDir);
-        LOG.info("Watching: {}", uploadDir);
-        LOG.info("Objects will be uploaded to the '{}' bucket in '{}' (namespace: '{}')", bucket, region, namespace);
-        if(isPrivateBucket) LOG.info("Since this bucket is private, pre-authenticated requests will be created with a duration of {} hours", parDurationHours);
-
         path.register(
                 watchService,
                 StandardWatchEventKinds.ENTRY_CREATE,
                 StandardWatchEventKinds.ENTRY_DELETE,
                 StandardWatchEventKinds.ENTRY_MODIFY);
         WatchKey key;
+
+        LOG.info("Watching: {}", uploadDir);
+        LOG.info("Objects will be uploaded to the '{}' bucket in '{}' (namespace: '{}')", bucket, region, namespace);
+        if(isPrivateBucket) LOG.info("Since this bucket is private, pre-authenticated requests will be created with a duration of {} hours", parDurationHours);
+
         while ((key = watchService.take()) != null) {
             for (WatchEvent<?> event : key.pollEvents()) {
                 String objectName = event.context().toString();
@@ -97,7 +94,6 @@ public class FileWatcherService {
                             hasException = true;
                             LOG.error("Update Object Exception: {}", e.getMessage());
                         }
-
                         if(isPrivateBucket) {
                             // get a pre-authenticated request for the uploaded object
                             CreatePreauthenticatedRequestDetails requestDetails = CreatePreauthenticatedRequestDetails.builder()
