@@ -1,13 +1,16 @@
 package codes.recursive;
 
+import com.oracle.bmc.model.BmcException;
 import com.oracle.bmc.objectstorage.ObjectStorageClient;
 import com.oracle.bmc.objectstorage.model.Bucket;
 import com.oracle.bmc.objectstorage.model.CreatePreauthenticatedRequestDetails;
 import com.oracle.bmc.objectstorage.model.PreauthenticatedRequest;
 import com.oracle.bmc.objectstorage.requests.CreatePreauthenticatedRequestRequest;
+import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest;
 import com.oracle.bmc.objectstorage.requests.GetBucketRequest;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import com.oracle.bmc.objectstorage.responses.CreatePreauthenticatedRequestResponse;
+import com.oracle.bmc.objectstorage.responses.DeleteObjectResponse;
 import com.oracle.bmc.objectstorage.responses.GetBucketResponse;
 import com.oracle.bmc.objectstorage.responses.PutObjectResponse;
 import jakarta.inject.Singleton;
@@ -58,6 +61,7 @@ public class FileWatcherService {
         LOG.info("Watching: {}", uploadDir);
         LOG.info("Objects will be uploaded to the '{}' bucket in '{}' (namespace: '{}')", bucket, region, namespace);
         if(isPrivateBucket) LOG.info("Since this bucket is private, pre-authenticated requests will be created with a duration of {} hours", parDurationHours);
+
         path.register(
                 watchService,
                 StandardWatchEventKinds.ENTRY_CREATE,
@@ -71,7 +75,8 @@ public class FileWatcherService {
                 File changedFile = new File(filePath);
                 String contentType = Files.probeContentType(changedFile.toPath());
                 String baseUrl = "https://objectstorage." + region + ".oraclecloud.com";
-                String objectUrl;
+                String objectUrl = "";
+                Boolean hasException = false;
 
                 // if this is a modify/create event, upload the object
                 if (!StandardWatchEventKinds.ENTRY_DELETE.equals(event.kind())){
@@ -83,7 +88,13 @@ public class FileWatcherService {
                                     .putObjectBody(new FileInputStream(changedFile))
                                     .contentType(contentType)
                                     .build();
-                    PutObjectResponse putObjectResponse = objectStorageClient.putObject(putObjectRequest);
+                    try {
+                        PutObjectResponse putObjectResponse = objectStorageClient.putObject(putObjectRequest);
+                    }
+                    catch (BmcException e) {
+                        hasException = true;
+                        LOG.error("Update Object Exception: {}", e.getMessage());
+                    }
 
                     if(isPrivateBucket) {
                         // get a pre-authenticated request for the uploaded object
@@ -99,35 +110,36 @@ public class FileWatcherService {
                                 .namespaceName(namespace)
                                 .createPreauthenticatedRequestDetails(requestDetails)
                                 .build();
-                        CreatePreauthenticatedRequestResponse preAuthenticatedRequestResponse = objectStorageClient.createPreauthenticatedRequest(preAuthenticatedRequest);
-                        objectUrl = baseUrl + preAuthenticatedRequestResponse.getPreauthenticatedRequest().getAccessUri();
+                        try {
+                            CreatePreauthenticatedRequestResponse preAuthenticatedRequestResponse = objectStorageClient.createPreauthenticatedRequest(preAuthenticatedRequest);
+                            objectUrl = baseUrl + preAuthenticatedRequestResponse.getPreauthenticatedRequest().getAccessUri();
+                        }
+                        catch (BmcException e) {
+                            hasException = true;
+                            LOG.error("Create PAR Exception: {}", e.getMessage());
+                        }
                     }
                     else {
                         objectUrl = baseUrl +  "/n/" + namespace + "/b/" + bucket + "/o/" + objectName.replaceAll(" ", "%20");
                     }
-
-                    // copy URL to clipboard and pop desktop notification
-                    // depends on https://github.com/vjeantet/alerter
-                    ProcessBuilder processBuilder = new ProcessBuilder();
-                    String message = "'" + objectName + "' has been uploaded to '" + bucket + "'. URL has been copied to clipboard.";
-                    LOG.info(message);
-                    LOG.info("URL: {}", objectUrl);
-                    String[] args = {
-                            "echo " + objectUrl + " | pbcopy && ",
-                            "/Users/trsharp/bin/alerter",
-                            "-timeout 5",
-                            "-title \"Object Uploaded!\"",
-                            "-message \"" + message + "\""
-                    };
-                    processBuilder.command("bash", "-c", String.join(" ",args));
-                    Process process = processBuilder.start();
                 }
                 else {
-                    // the action is a file delete.
-                    // I'm not going to do anything here,
-                    // but you may want to construct and send a
-                    // DeleteObjectRequest
+                    DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                            .bucketName(bucket)
+                            .objectName(objectName)
+                            .namespaceName(namespace)
+                            .build();
+                    try{
+                        DeleteObjectResponse deleteObjectResponse = objectStorageClient.deleteObject(deleteObjectRequest);
+                    }
+                    catch (BmcException e) {
+                        hasException = true;
+                        LOG.error("Delete Exception: {}", e.getMessage());
+                    }
                 }
+                String message = "Action (" + event.kind() + ") was " + (hasException ? "NOT " : "") + "applied to '" + objectName + "' in '" + bucket + "'.";
+                LOG.info(message);
+                if (objectUrl.length() > 0) LOG.info("URL: {}", objectUrl);
             }
             key.reset();
         }
