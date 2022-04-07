@@ -10,9 +10,7 @@ import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest;
 import com.oracle.bmc.objectstorage.requests.GetBucketRequest;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import com.oracle.bmc.objectstorage.responses.CreatePreauthenticatedRequestResponse;
-import com.oracle.bmc.objectstorage.responses.DeleteObjectResponse;
 import com.oracle.bmc.objectstorage.responses.GetBucketResponse;
-import com.oracle.bmc.objectstorage.responses.PutObjectResponse;
 import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,14 +21,15 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Singleton
 public class FileWatcherService {
     private static final Logger LOG = LoggerFactory.getLogger(FileWatcherService.class);
     public final ObjectStorageClient objectStorageClient;
-    private final Config config;
     private final String uploadDir;
     private final String bucket;
     private final String namespace;
@@ -40,7 +39,6 @@ public class FileWatcherService {
 
     public FileWatcherService( ObjectStorageClient objectStorageClient, Config config){
         this.objectStorageClient = objectStorageClient;
-        this.config = config;
         this.uploadDir = config.getLocalUploadDir();
         this.bucket = config.getOci().getBucket();
         this.namespace = config.getOci().getNamespace();
@@ -73,8 +71,8 @@ public class FileWatcherService {
                 String contentType = Files.probeContentType(changedFile.toPath());
                 String baseUrl = "https://objectstorage." + region + ".oraclecloud.com";
                 String objectUrl = "";
-                Boolean hasException = false;
-                if (!changedFile.isHidden()) {
+                boolean hasException = false;
+                if (!changedFile.isHidden() && !changedFile.isDirectory()) {
                     if ( !StandardWatchEventKinds.ENTRY_DELETE.equals(event.kind()) && changedFile.exists() ){
                         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                                 .objectName(event.context().toString())
@@ -84,7 +82,7 @@ public class FileWatcherService {
                                 .contentType(contentType)
                                 .build();
                         try {
-                            PutObjectResponse putObjectResponse = objectStorageClient.putObject(putObjectRequest);
+                            objectStorageClient.putObject(putObjectRequest);
                         }
                         catch (BmcException e) {
                             hasException = true;
@@ -92,7 +90,7 @@ public class FileWatcherService {
                         }
                         if(isPrivateBucket) {
                             CreatePreauthenticatedRequestDetails requestDetails = CreatePreauthenticatedRequestDetails.builder()
-                                    .name("PAR_" + UUID.randomUUID().toString())
+                                    .name("PAR_" + UUID.randomUUID())
                                     .bucketListingAction(PreauthenticatedRequest.BucketListingAction.Deny)
                                     .accessType(CreatePreauthenticatedRequestDetails.AccessType.ObjectRead)
                                     .objectName(objectName)
@@ -123,7 +121,7 @@ public class FileWatcherService {
                                 .namespaceName(namespace)
                                 .build();
                         try{
-                            DeleteObjectResponse deleteObjectResponse = objectStorageClient.deleteObject(deleteObjectRequest);
+                            objectStorageClient.deleteObject(deleteObjectRequest);
                         }
                         catch (BmcException e) {
                             hasException = true;
@@ -135,7 +133,10 @@ public class FileWatcherService {
                     if (objectUrl.length() > 0) LOG.info("URL: {}", objectUrl);
                 }
                 else {
-                    LOG.info("Action ({}) was ignored (file is hidden)", event.kind());
+                    List<String> ignoreReasons = new ArrayList<>();
+                    if (changedFile.isHidden()) ignoreReasons.add("Hidden File");
+                    if (changedFile.isDirectory() ) ignoreReasons.add("Directory");
+                    LOG.info("Action ({}) was ignored on '{}' for reason(s): {}", event.kind(), objectName, String.join(", ", ignoreReasons));
                 }
             }
             key.reset();

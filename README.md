@@ -121,3 +121,8 @@ Here is a log file that illustrates startup, the addition of a new file to the f
 15:35:09.303 [main] INFO  codes.recursive.FileWatcherService - URL: https://objectstorage.us-phoenix-1.oraclecloud.com/p/E3iZO7RgzN4pC7UuKc4iEhbyLPAbtU1THdOpoRkO3RAWohTjjbYwhTibCdzHp5VG/n/toddrsharp/b/screenshots/o/apple%20copy%206.jpg
 15:35:18.746 [main] INFO  codes.recursive.FileWatcherService - Action (ENTRY_DELETE) was applied to 'apple copy 6.jpg' in 'screenshots'.
 ```
+
+## FAQ
+
+* What about directories?
+  * What about 'em? 😆 But seriously - this application ignores them. My requirements are simple - watch a flat directory and upload to a bucket.
