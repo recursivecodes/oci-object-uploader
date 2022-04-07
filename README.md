@@ -9,6 +9,7 @@ The purpose of this project is to provide a tool to keep a local directory in sy
 Other things of note:
 
 * Actions on hidden files are ignored
+* Actions on subdirectories are ignored
 * Exceptions are caught and logged
 
 What could cause an exception? Lots of things. For example, if you changed the name of a file in your local directory while this application was not running, and then tried to delete it, the delete would fail because the remote object would not be found via the new name.
@@ -30,7 +31,7 @@ You'll need to pass in some values (and you do have the [CLI configured](#before
 
 ```shell
 $ ./oci-object-uploader \
-  -Duploader.local-upload-dir=/tmp/test \
+  -Duploader.watch-dir=/tmp/test \
   -Duploader.oci.namespace=toddrsharp \
   -Duploader.oci.bucket=screenshots \
   -Duploader.oci.region=us-phoenix-1 \
@@ -41,7 +42,7 @@ The application will log all actions to the console. If you'd prefer, you can ru
 
 ```shell
 $ nohup ./oci-object-uploader \
-  -Duploader.local-upload-dir=/tmp/test \
+  -Duploader.watch-dir=/tmp/test \
   -Duploader.oci.namespace=toddrsharp \
   -Duploader.oci.bucket=screenshots \
   -Duploader.oci.region=us-phoenix-1 \
@@ -51,7 +52,7 @@ $ nohup ./oci-object-uploader \
 Optionally run by setting environment variables (instead of passing arguments):
 
 ```shell
-$ export UPLOADER_LOCAL_UPLOAD_DIR = "/tmp/test"
+$ export UPLOADER_WATCH_DIR = "/tmp/test"
 $ export UPLOADER_OCI_NAMESPACE = "toddrsharp"
 $ export UPLOADER_OCI_BUCKET = "screenshots"
 $ export UPLOADER_OCI_REGION = "us-phoenix-1"
@@ -63,7 +64,7 @@ $ ./oci-object-uploader
 ### Windows (PowerShell)
 
 ```shell
-$Env:UPLOADER_LOCAL_UPLOAD_DIR = "c:\Users\opc\AppData\Local\Temp"
+$Env:UPLOADER_WATCH_DIR = "c:\Users\opc\AppData\Local\Temp"
 $Env:UPLOADER_OCI_NAMESPACE = "toddrsharp"
 $Env:UPLOADER_OCI_BUCKET = "screenshots"
 $Env:UPLOADER_OCI_REGION = "us-phoenix-1"
@@ -82,7 +83,7 @@ If for some reason you'd prefer to run it as a Jar file, clone the repo and buil
 
 ```shell
 $ java -jar \
-  -Duploader.local-upload-dir=/tmp/test \
+  -Duploader.watch-dir=/tmp/test \
   -Duploader.oci.namespace=toddrsharp \
   -Duploader.oci.bucket=screenshots \
   -Duploader.oci.region=us-phoenix-1 \
@@ -121,8 +122,3 @@ Here is a log file that illustrates startup, the addition of a new file to the f
 15:35:09.303 [main] INFO  codes.recursive.FileWatcherService - URL: https://objectstorage.us-phoenix-1.oraclecloud.com/p/E3iZO7RgzN4pC7UuKc4iEhbyLPAbtU1THdOpoRkO3RAWohTjjbYwhTibCdzHp5VG/n/toddrsharp/b/screenshots/o/apple%20copy%206.jpg
 15:35:18.746 [main] INFO  codes.recursive.FileWatcherService - Action (ENTRY_DELETE) was applied to 'apple copy 6.jpg' in 'screenshots'.
 ```
-
-## FAQ
-
-* What about directories?
-  * What about 'em? 😆 But seriously - this application ignores them. My requirements are simple - watch a flat directory and upload to a bucket.

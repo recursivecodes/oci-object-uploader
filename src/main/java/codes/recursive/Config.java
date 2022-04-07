@@ -2,21 +2,20 @@ package codes.recursive;
 
 import io.micronaut.context.annotation.ConfigurationProperties;
 
-import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 @ConfigurationProperties(value = "uploader")
 public class Config {
     @NotNull
-    private String localUploadDir;
+    private String watchDir;
 
-    public String getLocalUploadDir() {
-        return localUploadDir;
+    public String getWatchDir() {
+        return watchDir;
     }
 
-    public void setLocalUploadDir(String localUploadDir) {
-        this.localUploadDir = localUploadDir;
+    public void setWatchDir(String watchDir) {
+        this.watchDir = watchDir;
     }
 
     private Oci oci = new Oci();

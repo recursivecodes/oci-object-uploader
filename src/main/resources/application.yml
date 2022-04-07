@@ -7,7 +7,7 @@ netty:
     allocator:
       max-order: 3
 uploader:
-  local-upload-dir:
+  watch-dir:
   oci:
     namespace:
     bucket:

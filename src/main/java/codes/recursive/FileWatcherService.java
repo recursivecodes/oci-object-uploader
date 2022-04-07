@@ -39,7 +39,7 @@ public class FileWatcherService {
 
     public FileWatcherService( ObjectStorageClient objectStorageClient, Config config){
         this.objectStorageClient = objectStorageClient;
-        this.uploadDir = config.getLocalUploadDir();
+        this.uploadDir = config.getWatchDir();
         this.bucket = config.getOci().getBucket();
         this.namespace = config.getOci().getNamespace();
         this.region = config.getOci().getRegion();
